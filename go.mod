@@ -1,4 +1,4 @@
-module lts
+module go-lts-core
 
 go 1.22.9
 
