@@ -1,4 +1,4 @@
-module go-lts-core
+module github.com/sssxyd/go-lts-core
 
 go 1.22.9
 
