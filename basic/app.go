@@ -46,7 +46,8 @@ func GetAppRootDir() string {
 			fmt.Println("Failed to get caller information")
 			return ""
 		}
-		return filepath.Dir(filepath.Dir(filepath.Dir(filename)))
+		fmt.Println("filename:", filename)
+		return filepath.Dir(filepath.Dir(filename))
 	} else {
 		// 默认返回可执行文件所在目录
 		return exeDir
