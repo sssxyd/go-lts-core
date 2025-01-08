@@ -11,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sssxyd/go-lts-core/basic"
 )
 
 type SqliteDataSource struct {
@@ -118,7 +119,7 @@ func create_reader(path string, max_memory_map_size uint64) (*sqlx.DB, error) {
 	}
 
 	// 获取可用内存的一半，默认64MB
-	freeMemory := get_available_memory()
+	freeMemory := basic.GetAvailableMemory()
 	if freeMemory <= 0 {
 		freeMemory = 64 * 1024 * 1024
 	} else {
@@ -132,7 +133,7 @@ func create_reader(path string, max_memory_map_size uint64) (*sqlx.DB, error) {
 	cacheSize := calculateCacheSize(mmapSize, fileSize)
 
 	// 获取CPU数量并确保最小为1
-	cpuCount := get_cpu_count()
+	cpuCount := basic.GetCpuCount()
 	if cpuCount < 1 {
 		cpuCount = 1
 	}

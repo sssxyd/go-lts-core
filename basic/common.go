@@ -147,14 +147,6 @@ func InitializeLogFile(logFilePath string, stdOut bool) (*os.File, error) {
 	return logFile, err
 }
 
-func FileExists(file_path string) bool {
-	_, err := os.Stat(file_path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return err == nil
-}
-
 func GetFileInfo(file_path string) (os.FileInfo, error) {
 	fileInfo, err := os.Stat(file_path)
 	if err != nil {

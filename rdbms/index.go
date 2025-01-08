@@ -1,27 +1,51 @@
 package rdbms
 
 import (
-	"path/filepath"
-	"sync"
+	"fmt"
 )
 
 var (
-	sqliteInstance IDataSource
-	sqliteOnce     sync.Once
+	dataSourceMap = make(map[string]IDataSource)
 )
 
-func Sqlite(statements []string) IDataSource {
-	sqliteOnce.Do(func() {
-		root_dir := get_app_root_dir()
-		db_path := filepath.Join(root_dir, "localdb", "default.db")
-		sqliteInstance = newSqliteDataSource("default", db_path, statements)
-	})
-	return sqliteInstance
+func NewDataSource(id string, jdbc_url string, statements []string) (IDataSource, error) {
+	if id == "" || jdbc_url == "" {
+		return nil, fmt.Errorf("id or jdbc_url is empty")
+	}
+	jdbcUrl, err := parse_jdbc_url(jdbc_url)
+	if err != nil {
+		return nil, err
+	}
+
+	var ds IDataSource
+	if dataSourceMap[id] != nil {
+		ds = dataSourceMap[id]
+		ds.Close()
+		ds = nil
+		delete(dataSourceMap, id)
+	}
+
+	switch jdbcUrl.Driver {
+	case "sqlite":
+		ds = newSqliteDataSource(id, jdbcUrl.Host, statements)
+		dataSourceMap[id] = ds
+		return ds, nil
+	default:
+		return nil, fmt.Errorf("unsupported driver: %s", jdbcUrl.Driver)
+	}
+}
+
+func DataSource(id string) IDataSource {
+	ds, ok := dataSourceMap[id]
+	if ok {
+		return ds
+	}
+	return nil
 }
 
 func Close() {
-	if sqliteInstance != nil {
-		sqliteInstance.Close()
-		sqliteInstance = nil
+	for _, ds := range dataSourceMap {
+		ds.Close()
 	}
+	dataSourceMap = make(map[string]IDataSource)
 }

@@ -1,17 +1,11 @@
 package rdbms
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"path/filepath"
+	"net/url"
 	"reflect"
-	"runtime"
-	"strconv"
 	"strings"
 	"sync"
-	"syscall"
-	"unsafe"
 )
 
 type memoryStatusEx struct {
@@ -65,72 +59,6 @@ func scan_table(tableSpecs *sync.Map, models ...ITable) {
 	}
 }
 
-func get_available_memory() uint64 {
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		file, err := os.Open("/proc/meminfo")
-		if err != nil {
-			return 0
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "MemAvailable:") {
-				fields := strings.Fields(line)
-				availableMemoryKB, err := strconv.ParseUint(fields[1], 10, 64)
-				if err != nil {
-					return 0
-				}
-				// 返回值为 KB 转换为字节
-				return availableMemoryKB * 1024
-			}
-		}
-		return 0
-	case "windows":
-		kernel32 := syscall.NewLazyDLL("kernel32.dll")
-		globalMemoryStatusEx := kernel32.NewProc("GlobalMemoryStatusEx")
-
-		var memStatus memoryStatusEx
-		memStatus.Length = uint32(unsafe.Sizeof(memStatus))
-
-		ret, _, _ := globalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memStatus)))
-		if ret == 0 {
-			return 0
-		}
-		return memStatus.AvailPhys
-	default:
-		return 0
-	}
-}
-
-func get_cpu_count() int {
-	return runtime.NumCPU()
-}
-
-func get_app_root_dir() string {
-	exePath, err := os.Executable()
-	if err != nil {
-		fmt.Println("Error getting executable path:", err)
-		return ""
-	}
-	exeDir := filepath.Dir(exePath)
-
-	// 判断是否在临时目录中运行（典型的 go run 行为）
-	if strings.Contains(exePath, os.TempDir()) {
-		_, filename, _, ok := runtime.Caller(0)
-		if !ok {
-			fmt.Println("Failed to get caller information")
-			return ""
-		}
-		return filepath.Dir(filepath.Dir(filepath.Dir(filename)))
-	} else {
-		// 默认返回可执行文件所在目录
-		return exeDir
-	}
-}
-
 func SqlToParams(inputs ...interface{}) []interface{} {
 	var result []interface{}
 	for _, input := range inputs {
@@ -155,4 +83,61 @@ func SqlInValues(size int) string {
 		placeholders[i] = "?"
 	}
 	return "(" + strings.Join(placeholders, ",") + ")"
+}
+
+func parse_jdbc_url(jdbc_url string) (*JdbcUrl, error) {
+	if !strings.HasPrefix(jdbc_url, "jdbc:") {
+		return nil, fmt.Errorf("invalid JDBC URL: must start with 'jdbc:'")
+	}
+
+	// Remove the "jdbc:" prefix
+	trimmedURL := strings.TrimPrefix(jdbc_url, "jdbc:")
+
+	// Split the URL into driver and the actual connection string
+	parts := strings.SplitN(trimmedURL, ":", 2)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("invalid JDBC URL: missing driver or connection string")
+	}
+
+	driver := parts[0]
+	connectionString := parts[1]
+
+	// Special handling for SQLite (file-based URL)
+	if driver == "sqlite" {
+		return &JdbcUrl{
+			Driver: driver,
+			Host:   connectionString, // SQLite uses the connection string as the file path
+		}, nil
+	}
+
+	// Parse the connection string as a URL
+	u, err := url.Parse(connectionString)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JDBC URL: %v", err)
+	}
+
+	// Extract user info
+	var username, password string
+	if u.User != nil {
+		username = u.User.Username()
+		password, _ = u.User.Password()
+	}
+
+	// Extract query parameters
+	params := make(map[string]string)
+	for key, values := range u.Query() {
+		if len(values) > 0 {
+			params[key] = values[0]
+		}
+	}
+
+	return &JdbcUrl{
+		Driver:   driver,
+		Host:     u.Hostname(),
+		Port:     u.Port(),
+		Database: strings.TrimPrefix(u.Path, "/"), // Remove leading slash from the path
+		Username: username,
+		Password: password,
+		Params:   params,
+	}, nil
 }
