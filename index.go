@@ -1,8 +1,9 @@
-package main
+package lts
 
 import (
-	"fmt"
+	"os"
 
+	"github.com/sssxyd/go-lts-core/basic"
 	"github.com/sssxyd/go-lts-core/rdbms"
 )
 
@@ -21,15 +22,51 @@ type DBConfig struct {
 }
 
 type Options struct {
-	LocalStoragePath string
-	LogFilePath      string
-	DBConfigs        []DBConfig
+	LogFilePath     string
+	LogStdOut       bool
+	StorageFilePath string
+	DBConfigs       []DBConfig
 }
 
-func LTS_Start(options *Options) {
-	fmt.Println("Start")
+var (
+	localStorage *LocalStorage
+	appLogFile   *os.File
+)
+
+func Start(options *Options) {
+
+	// 初始化日志
+	app_log, err := basic.InitializeLogFile(options.LogFilePath, options.LogStdOut)
+	if err != nil {
+		panic(err)
+	}
+	appLogFile = app_log
+
+	// 初始化本地存储
+	if options.LogFilePath != "" {
+		localStorage = init_local_storage(options.StorageFilePath)
+	}
+
+	// 初始化数据库
+	for _, dbConfig := range options.DBConfigs {
+		_, err := rdbms.NewDataSource(dbConfig.Id, dbConfig.JdbcUrl, dbConfig.Statements, dbConfig.Tables)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
-func LTS_Stop() {
-	fmt.Println("Stop")
+func Stop() {
+	// 关闭日志文件
+	if appLogFile != nil {
+		appLogFile.Close()
+	}
+
+	// 关闭本地存储, 本地存储由数据库实现，所以关闭数据库即可
+	// 关闭数据库
+	rdbms.Close()
+}
+
+func Storage() *LocalStorage {
+	return localStorage
 }

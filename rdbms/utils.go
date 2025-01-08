@@ -77,6 +77,16 @@ func SqlToParams(inputs ...interface{}) []interface{} {
 	return result
 }
 
+func ModelToTables(models ...interface{}) []ITable {
+	var iTables []ITable
+	for _, model := range models {
+		if iTable, ok := model.(ITable); ok {
+			iTables = append(iTables, iTable)
+		}
+	}
+	return iTables
+}
+
 func SqlInValues(size int) string {
 	placeholders := make([]string, size)
 	for i := range placeholders {

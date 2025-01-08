@@ -24,13 +24,12 @@ type SqliteDataSource struct {
 	wg         sync.WaitGroup
 }
 
-func newSqliteDataSource(id string, db_path string, statements []string) *SqliteDataSource {
+func newSqliteDataSource(id string, db_path string, statements []string) (*SqliteDataSource, error) {
 	// 检查文件是否存在
 	// 创建目录
 	err := os.MkdirAll(filepath.Dir(db_path), os.ModePerm)
 	if err != nil {
-		log.Printf("failed to create directory: %v\n", err)
-		return nil
+		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// 检查数据库文件是否存在，若不存在则创建文件
@@ -41,8 +40,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) *Sqlite
 	} else {
 		file, err := os.OpenFile(db_path, os.O_CREATE|os.O_EXCL, os.ModePerm)
 		if err != nil {
-			log.Printf("failed to create database file: %v\n", err)
-			return nil
+			return nil, fmt.Errorf("failed to create database file: %w", err)
 		}
 		file.Close()
 	}
@@ -50,7 +48,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) *Sqlite
 	writer, err := create_writer(db_path)
 	if err != nil {
 		log.Printf("failed to create writer: %v\n", err)
-		return nil
+		return nil, err
 	}
 	if !db_file_exists && len(statements) > 0 {
 		for _, statement := range statements {
@@ -62,7 +60,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) *Sqlite
 			if err != nil {
 				log.Printf("failed to execute statement: %v\n", err)
 				writer.Close()
-				return nil
+				return nil, err
 			}
 		}
 	}
@@ -71,7 +69,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) *Sqlite
 	if err != nil {
 		log.Printf("failed to create reader: %v\n", err)
 		writer.Close()
-		return nil
+		return nil, err
 	}
 
 	ds := &SqliteDataSource{
@@ -88,7 +86,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) *Sqlite
 	ds.wg.Add(1)
 	go do_sql_task_background(writer, ds.doTasks, &ds.wg)
 
-	return ds
+	return ds, nil
 }
 
 func create_writer(db_path string) (*sqlx.DB, error) {

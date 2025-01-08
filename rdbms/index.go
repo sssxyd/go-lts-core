@@ -2,13 +2,15 @@ package rdbms
 
 import (
 	"fmt"
+	"strings"
 )
 
 var (
-	dataSourceMap = make(map[string]IDataSource)
+	mainDataSourceId = ""
+	dataSourceMap    = make(map[string]IDataSource)
 )
 
-func NewDataSource(id string, jdbc_url string, statements []string) (IDataSource, error) {
+func NewDataSource(id string, jdbc_url string, statements []string, tables []ITable) (IDataSource, error) {
 	if id == "" || jdbc_url == "" {
 		return nil, fmt.Errorf("id or jdbc_url is empty")
 	}
@@ -17,30 +19,53 @@ func NewDataSource(id string, jdbc_url string, statements []string) (IDataSource
 		return nil, err
 	}
 
-	var ds IDataSource
 	if dataSourceMap[id] != nil {
-		ds = dataSourceMap[id]
+		ds := dataSourceMap[id]
 		ds.Close()
 		ds = nil
 		delete(dataSourceMap, id)
 	}
 
+	var ds IDataSource
 	switch jdbcUrl.Driver {
 	case "sqlite":
-		ds = newSqliteDataSource(id, jdbcUrl.Host, statements)
+		ds, err = newSqliteDataSource(id, jdbcUrl.Host, statements)
+		if err != nil {
+			return nil, err
+		}
 		dataSourceMap[id] = ds
-		return ds, nil
+		break
 	default:
 		return nil, fmt.Errorf("unsupported driver: %s", jdbcUrl.Driver)
 	}
+
+	if len(tables) > 0 {
+		ds.ScanTable(tables...)
+	}
+	if mainDataSourceId == "" && !strings.HasPrefix(id, "_") {
+		mainDataSourceId = id
+	}
+	return ds, nil
 }
 
 func DataSource(id string) IDataSource {
-	ds, ok := dataSourceMap[id]
-	if ok {
-		return ds
+	return dataSourceMap[id]
+}
+
+func Main() IDao {
+	if mainDataSourceId == "" {
+		return nil
 	}
-	return nil
+	return Dao(mainDataSourceId)
+}
+
+func Dao(id string) IDao {
+
+	ds, exist := dataSourceMap[id]
+	if !exist {
+		return nil
+	}
+	return ds.NewDao()
 }
 
 func Close() {
