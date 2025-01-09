@@ -108,11 +108,10 @@ func (l *LocalStorage) Remove(keys ...string) int {
 }
 
 func (l *LocalStorage) Get(key string) string {
-	store := &StorageModel{}
-	var model StorageModel
+	model := &StorageModel{}
 
 	sql := "SELECT * FROM storage WHERE store_key = ? AND expired_at >= ? ORDER BY id DESC LIMIT 1"
-	err := l.dao.Conn().Get(store, sql, key, time.Now().Unix())
+	err := l.dao.Conn().Get(model, sql, key, time.Now().Unix())
 	if err != nil {
 		return ""
 	}
