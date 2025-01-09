@@ -321,15 +321,19 @@ func (ds *SqliteDataSource) Close() error {
 	close(ds.doTasks)
 	// 等待后台任务结束
 	ds.wg.Wait()
-	// 关闭写数据库连接
-	err := ds.writer.Close()
-	if err != nil {
-		return err
-	}
+	log.Printf("sqlite data source[%s] tasks done\n", ds.id)
+
 	// 关闭读数据库连接
-	err = ds.reader.Close()
+	err := ds.reader.Close()
 	if err != nil {
 		return err
 	}
+	log.Printf("%s's reader closed\n", ds.id)
+	// 关闭写数据库连接
+	err = ds.writer.Close()
+	if err != nil {
+		return err
+	}
+	log.Printf("%s's writer closed\n", ds.id)
 	return nil
 }
