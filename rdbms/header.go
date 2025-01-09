@@ -67,7 +67,7 @@ type IDao interface {
 	Conn() *sqlx.DB
 }
 
-type JdbcUrl struct {
+type DBUrl struct {
 	Driver   string            // JDBC driver name (e.g., sqlite, mysql)
 	Host     string            // Hostname or file path (for sqlite)
 	Port     string            // Port number (optional)

@@ -95,13 +95,9 @@ func SqlInValues(size int) string {
 	return "(" + strings.Join(placeholders, ",") + ")"
 }
 
-func parse_jdbc_url(jdbc_url string) (*JdbcUrl, error) {
-	if !strings.HasPrefix(jdbc_url, "jdbc:") {
-		return nil, fmt.Errorf("invalid JDBC URL: must start with 'jdbc:'")
-	}
+func parse_db_url(db_url string) (*DBUrl, error) {
 
-	// Remove the "jdbc:" prefix
-	trimmedURL := strings.TrimPrefix(jdbc_url, "jdbc:")
+	trimmedURL := strings.TrimSpace(db_url)
 
 	// Split the URL into driver and the actual connection string
 	parts := strings.SplitN(trimmedURL, ":", 2)
@@ -114,7 +110,7 @@ func parse_jdbc_url(jdbc_url string) (*JdbcUrl, error) {
 
 	// Special handling for SQLite (file-based URL)
 	if driver == "sqlite" {
-		return &JdbcUrl{
+		return &DBUrl{
 			Driver: driver,
 			Host:   connectionString, // SQLite uses the connection string as the file path
 		}, nil
@@ -141,7 +137,7 @@ func parse_jdbc_url(jdbc_url string) (*JdbcUrl, error) {
 		}
 	}
 
-	return &JdbcUrl{
+	return &DBUrl{
 		Driver:   driver,
 		Host:     u.Hostname(),
 		Port:     u.Port(),

@@ -16,7 +16,7 @@ type ApiResult struct {
 
 type DBConfig struct {
 	Id         string
-	JdbcUrl    string
+	DBUrl      string
 	Statements []string
 	Tables     []rdbms.ITable
 }
@@ -49,7 +49,7 @@ func Start(options *Options) {
 
 	// 初始化数据库
 	for _, dbConfig := range options.DBConfigs {
-		_, err := rdbms.NewDataSource(dbConfig.Id, dbConfig.JdbcUrl, dbConfig.Statements, dbConfig.Tables)
+		_, err := rdbms.NewDataSource(dbConfig.Id, dbConfig.DBUrl, dbConfig.Statements, dbConfig.Tables)
 		if err != nil {
 			panic(err)
 		}

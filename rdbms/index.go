@@ -10,11 +10,11 @@ var (
 	dataSourceMap    = make(map[string]IDataSource)
 )
 
-func NewDataSource(id string, jdbc_url string, statements []string, tables []ITable) (IDataSource, error) {
-	if id == "" || jdbc_url == "" {
-		return nil, fmt.Errorf("id or jdbc_url is empty")
+func NewDataSource(id string, db_url string, statements []string, tables []ITable) (IDataSource, error) {
+	if id == "" || db_url == "" {
+		return nil, fmt.Errorf("id or url is empty")
 	}
-	jdbcUrl, err := parse_jdbc_url(jdbc_url)
+	dbUrl, err := parse_db_url(db_url)
 	if err != nil {
 		return nil, err
 	}
@@ -27,16 +27,16 @@ func NewDataSource(id string, jdbc_url string, statements []string, tables []ITa
 	}
 
 	var ds IDataSource
-	switch jdbcUrl.Driver {
+	switch dbUrl.Driver {
 	case "sqlite":
-		ds, err = newSqliteDataSource(id, jdbcUrl.Host, statements)
+		ds, err = newSqliteDataSource(id, dbUrl.Host, statements)
 		if err != nil {
 			return nil, err
 		}
 		dataSourceMap[id] = ds
 		break
 	default:
-		return nil, fmt.Errorf("unsupported driver: %s", jdbcUrl.Driver)
+		return nil, fmt.Errorf("unsupported driver: %s", dbUrl.Driver)
 	}
 
 	if len(tables) > 0 {
