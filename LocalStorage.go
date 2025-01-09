@@ -133,7 +133,11 @@ func (l *LocalStorage) MGet(keys ...string) map[string]string {
 	return result
 }
 
-func (l *LocalStorage) Set(key string, value string, expiredAt int64) {
+func (l *LocalStorage) Set(key string, value string) {
+	l.SetEx(key, value, permanent_unix_time)
+}
+
+func (l *LocalStorage) SetEx(key string, value string, expiredAt int64) {
 	l.Remove(key)
 
 	if expiredAt <= 0 {
@@ -148,7 +152,11 @@ func (l *LocalStorage) Set(key string, value string, expiredAt int64) {
 	l.dao.TableInsert(store)
 }
 
-func (l *LocalStorage) MSet(data map[string]string, expiredAt int64) {
+func (l *LocalStorage) MSet(data map[string]string) {
+	l.MSetEx(data, permanent_unix_time)
+}
+
+func (l *LocalStorage) MSetEx(data map[string]string, expiredAt int64) {
 	if len(data) == 0 {
 		return
 	}
