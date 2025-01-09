@@ -33,7 +33,7 @@ var (
 	appLogFile   *os.File
 )
 
-func Start(options *Options) {
+func Initialize(options *Options) {
 
 	// 初始化日志
 	app_log, err := basic.InitializeLogFile(options.LogFilePath, options.LogStdOut)
@@ -43,7 +43,7 @@ func Start(options *Options) {
 	appLogFile = app_log
 
 	// 初始化本地存储
-	if options.LogFilePath != "" {
+	if options.StorageFilePath != "" {
 		localStorage = init_local_storage(options.StorageFilePath)
 	}
 
@@ -56,7 +56,7 @@ func Start(options *Options) {
 	}
 }
 
-func Stop() {
+func Dispose() {
 	// 关闭日志文件
 	if appLogFile != nil {
 		appLogFile.Close()
@@ -69,4 +69,16 @@ func Stop() {
 
 func Storage() *LocalStorage {
 	return localStorage
+}
+
+func GetDao() rdbms.IDao {
+	return NewDao("")
+}
+
+func NewDao(dataSourceId string) rdbms.IDao {
+	ds := rdbms.GetDataSource(dataSourceId)
+	if ds == nil {
+		return nil
+	}
+	return ds.NewDao()
 }

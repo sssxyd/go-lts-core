@@ -48,24 +48,11 @@ func NewDataSource(id string, db_url string, statements []string, tables []ITabl
 	return ds, nil
 }
 
-func DataSource(id string) IDataSource {
+func GetDataSource(id string) IDataSource {
+	if id == "" {
+		id = mainDataSourceId
+	}
 	return dataSourceMap[id]
-}
-
-func Main() IDao {
-	if mainDataSourceId == "" {
-		return nil
-	}
-	return Dao(mainDataSourceId)
-}
-
-func Dao(id string) IDao {
-
-	ds, exist := dataSourceMap[id]
-	if !exist {
-		return nil
-	}
-	return ds.NewDao()
 }
 
 func Close() {
