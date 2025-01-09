@@ -1,7 +1,9 @@
 package lts
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/sssxyd/go-lts-core/rdbms"
@@ -34,6 +36,7 @@ type LocalStorage struct {
 }
 
 func init_local_storage(storageFilePath string) *LocalStorage {
+	storageFilePath = strings.ReplaceAll(storageFilePath, "\\", "/")
 	statements := []string{
 		`CREATE TABLE IF NOT EXISTS "storage" (
 			"id"	INTEGER NOT NULL UNIQUE,
@@ -50,7 +53,7 @@ func init_local_storage(storageFilePath string) *LocalStorage {
 		);`,
 	}
 	tables := []rdbms.ITable{&StorageModel{}}
-	ds, err := rdbms.NewDataSource(local_storage_datasource_id, "jdbc:sqlite://"+storageFilePath, statements, tables)
+	ds, err := rdbms.NewDataSource(local_storage_datasource_id, fmt.Sprintf("sqlite:%s", storageFilePath), statements, tables)
 	if err != nil {
 		panic(err)
 	}
