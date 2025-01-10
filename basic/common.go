@@ -1,103 +1,79 @@
 package basic
 
 import (
-	"bufio"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
-	"runtime"
-	"strconv"
-	"strings"
-	"syscall"
-	"unsafe"
+	"path/filepath"
 )
 
-type memoryStatusEx struct {
-	Length               uint32
-	MemoryLoad           uint32
-	TotalPhys            uint64
-	AvailPhys            uint64
-	TotalPageFile        uint64
-	AvailPageFile        uint64
-	TotalVirtual         uint64
-	AvailVirtual         uint64
-	AvailExtendedVirtual uint64
-}
-
-func MD5(text string) string {
+func StrToMD5(text string) string {
 	hash := md5.Sum([]byte(text))
 	md5String := hex.EncodeToString(hash[:])
 	return md5String
 }
 
-func GetAvailableMemory() uint64 {
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		file, err := os.Open("/proc/meminfo")
-		if err != nil {
-			return 0
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, "MemAvailable:") {
-				fields := strings.Fields(line)
-				availableMemoryKB, err := strconv.ParseUint(fields[1], 10, 64)
-				if err != nil {
-					return 0
-				}
-				// 返回值为 KB 转换为字节
-				return availableMemoryKB * 1024
-			}
-		}
-		return 0
-	case "windows":
-		kernel32 := syscall.NewLazyDLL("kernel32.dll")
-		globalMemoryStatusEx := kernel32.NewProc("GlobalMemoryStatusEx")
-
-		var memStatus memoryStatusEx
-		memStatus.Length = uint32(unsafe.Sizeof(memStatus))
-
-		ret, _, _ := globalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memStatus)))
-		if ret == 0 {
-			return 0
-		}
-		return memStatus.AvailPhys
-	default:
-		return 0
-	}
+func BytesToBase64(bytes []byte) string {
+	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-func GetCpuCount() int {
-	return runtime.NumCPU()
+func Base64ToBytes(base64Str string) []byte {
+	bytes, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil
+	}
+	return bytes
+}
+
+func BytesToHex(bytes []byte) string {
+	return hex.EncodeToString(bytes)
+}
+
+func HexToBytes(hexStr string) []byte {
+	bytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil
+	}
+	return bytes
 }
 
 func IsPathExist(path string) bool {
 	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
+	if err != nil && os.IsNotExist(err) {
 		return false
-	} else if err != nil {
-		log.Printf("An error occurred while checking the path %s: %v\n", path, err)
-		return false
-	} else {
-		return true
 	}
+	return true
 }
 
 func TouchDir(path string) error {
-	// 检查目录是否存在
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// 创建目录
-		err := os.MkdirAll(path, 0755) // 0755 权限设置允许所有者读写执行，组和其他用户只读执行
-		if err != nil {
-			return err
+	// 获取路径的信息
+	_, err := os.Stat(path)
+
+	if err == nil { // 如果路径已存在
+		return nil
+	}
+
+	if os.IsNotExist(err) { // 路径不存在
+		// 检查路径是否包含扩展名，判断是文件还是目录
+		if filepath.Ext(path) != "" {
+			// 这是一个文件路径，创建其父目录
+			dir := filepath.Dir(path)
+			fmt.Printf("Creating directory for file: %s\n", dir)
+			return os.MkdirAll(dir, 0755)
+		} else {
+			// 这是一个目录路径，创建目录
+			fmt.Printf("Creating directory: %s\n", path)
+			return os.MkdirAll(path, 0755)
 		}
 	}
-	return nil
+
+	// 如果出现其他错误
+	return err
 }
 
 func GetFileInfo(file_path string) (os.FileInfo, error) {

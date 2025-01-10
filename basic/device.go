@@ -1,13 +1,73 @@
 package basic
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
+	"unsafe"
 )
+
+type memoryStatusEx struct {
+	Length               uint32
+	MemoryLoad           uint32
+	TotalPhys            uint64
+	AvailPhys            uint64
+	TotalPageFile        uint64
+	AvailPageFile        uint64
+	TotalVirtual         uint64
+	AvailVirtual         uint64
+	AvailExtendedVirtual uint64
+}
+
+func GetAvailableMemory() uint64 {
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		file, err := os.Open("/proc/meminfo")
+		if err != nil {
+			return 0
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(line, "MemAvailable:") {
+				fields := strings.Fields(line)
+				availableMemoryKB, err := strconv.ParseUint(fields[1], 10, 64)
+				if err != nil {
+					return 0
+				}
+				// 返回值为 KB 转换为字节
+				return availableMemoryKB * 1024
+			}
+		}
+		return 0
+	case "windows":
+		kernel32 := syscall.NewLazyDLL("kernel32.dll")
+		globalMemoryStatusEx := kernel32.NewProc("GlobalMemoryStatusEx")
+
+		var memStatus memoryStatusEx
+		memStatus.Length = uint32(unsafe.Sizeof(memStatus))
+
+		ret, _, _ := globalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memStatus)))
+		if ret == 0 {
+			return 0
+		}
+		return memStatus.AvailPhys
+	default:
+		return 0
+	}
+}
+
+func GetCpuCount() int {
+	return runtime.NumCPU()
+}
 
 // 获取设备唯一 ID 的跨平台实现
 func GetDeviceID() (string, error) {
