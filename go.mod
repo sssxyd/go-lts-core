@@ -7,4 +7,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 )
 
-require gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+require (
+	github.com/mcuadros/go-defaults v1.2.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+)

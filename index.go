@@ -19,14 +19,22 @@ type DBConfig struct {
 	Tables     []rdbms.ITable
 }
 
+type LogConfig struct {
+	FilePath    string `default:"./logs/app.log"` // 日志文件路径
+	MaxMegaByte int    `default:"100"`
+	MaxAgeDay   int    `default:"7"`
+	Compress    bool   `default:"true"`
+	StdOut      bool   `default:"false"`
+}
+
+type StorageConfig struct {
+	FilePath string `default:"./data/storage.db"` // 本地存储文件路径
+}
+
 type Options struct {
-	LogFilePath     string
-	LogMaxMegaBytes int
-	LogMaxAgeDay    int
-	LogCompress     bool
-	LogStdOut       bool
-	StorageFilePath string
-	DBConfigs       []DBConfig
+	LogConfig     LogConfig
+	StorageConfig StorageConfig
+	DBConfigs     []DBConfig
 }
 
 var (
@@ -37,11 +45,11 @@ var (
 func Initialize(options *Options) {
 
 	// 初始化日志
-	logger = initialize_lumberjack_logger(options.LogFilePath, options.LogMaxMegaBytes, options.LogMaxAgeDay, options.LogCompress, options.LogStdOut)
+	logger = initialize_lumberjack_logger(options.LogConfig.FilePath, options.LogConfig.MaxMegaByte, options.LogConfig.MaxAgeDay, options.LogConfig.Compress, options.LogConfig.StdOut)
 
 	// 初始化本地存储
-	if options.StorageFilePath != "" {
-		localStorage = initialize_sqlite_local_storage(options.StorageFilePath)
+	if options.StorageConfig.FilePath != "" {
+		localStorage = initialize_sqlite_local_storage(options.StorageConfig.FilePath)
 	}
 
 	// 初始化数据库
