@@ -1,10 +1,8 @@
 package lts
 
 import (
-	"os"
-
-	"github.com/sssxyd/go-lts-core/basic"
 	"github.com/sssxyd/go-lts-core/rdbms"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type ApiResult struct {
@@ -23,6 +21,9 @@ type DBConfig struct {
 
 type Options struct {
 	LogFilePath     string
+	LogMaxMegaBytes int
+	LogMaxAgeDay    int
+	LogCompress     bool
 	LogStdOut       bool
 	StorageFilePath string
 	DBConfigs       []DBConfig
@@ -30,21 +31,17 @@ type Options struct {
 
 var (
 	localStorage *LocalStorage
-	appLogFile   *os.File
+	logger       *lumberjack.Logger
 )
 
 func Initialize(options *Options) {
 
 	// 初始化日志
-	app_log, err := basic.InitializeLogFile(options.LogFilePath, options.LogStdOut)
-	if err != nil {
-		panic(err)
-	}
-	appLogFile = app_log
+	logger = initialize_lumberjack_logger(options.LogFilePath, options.LogMaxMegaBytes, options.LogMaxAgeDay, options.LogCompress, options.LogStdOut)
 
 	// 初始化本地存储
 	if options.StorageFilePath != "" {
-		localStorage = init_local_storage(options.StorageFilePath)
+		localStorage = initialize_sqlite_local_storage(options.StorageFilePath)
 	}
 
 	// 初始化数据库
@@ -58,8 +55,8 @@ func Initialize(options *Options) {
 
 func Dispose() {
 	// 关闭日志文件
-	if appLogFile != nil {
-		appLogFile.Close()
+	if logger != nil {
+		logger.Close()
 	}
 
 	// 关闭本地存储, 本地存储由数据库实现，所以关闭数据库即可

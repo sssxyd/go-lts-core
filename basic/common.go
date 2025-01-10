@@ -5,10 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -100,51 +98,6 @@ func TouchDir(path string) error {
 		}
 	}
 	return nil
-}
-
-func OpenLogFile(logFilePath string) (*os.File, error) {
-	logFilDir := filepath.Dir(logFilePath)
-	TouchDir(logFilDir)
-	// 确保目录存在
-	if err := os.MkdirAll(logFilDir, 0755); err != nil {
-		print("Failed to create directory: %v", err)
-		return nil, err
-	}
-	// 打开或创建日志文件
-	return os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-}
-
-/*
-InitializeLogFile initializes the log file and returns the file pointer.
-Parameters:
-
-	logFilePath: the path of the log file.
-	stdOut: whether to output to stdout.
-
-Returns:
-
-	*os.File: the file pointer of the log file.
-*/
-func InitializeLogFile(logFilePath string, stdOut bool) (*os.File, error) {
-
-	// 设置日志前缀包含长文件名和行号
-	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime | log.Lmicroseconds)
-
-	// 打开或创建日志文件
-	logFile, err := OpenLogFile(logFilePath)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-		return nil, err
-	}
-
-	if stdOut {
-		//设置 MultiWriter，同时输出到文件和 stdout
-		mw := io.MultiWriter(os.Stdout, logFile)
-		log.SetOutput(mw)
-	} else {
-		log.SetOutput(logFile)
-	}
-	return logFile, err
 }
 
 func GetFileInfo(file_path string) (os.FileInfo, error) {

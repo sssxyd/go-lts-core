@@ -39,7 +39,7 @@ type LocalStorage struct {
 	dao rdbms.IDao
 }
 
-func init_local_storage(storageFilePath string) *LocalStorage {
+func initialize_sqlite_local_storage(storageFilePath string) *LocalStorage {
 	storageFilePath = strings.ReplaceAll(storageFilePath, "\\", "/")
 	statements := []string{
 		`CREATE TABLE IF NOT EXISTS "storage" (
