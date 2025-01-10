@@ -31,6 +31,10 @@ func (s *StorageModel) DeleteInt64Key() string {
 	return ""
 }
 
+func (s *StorageModel) AutoUpdateKeys() []string {
+	return []string{}
+}
+
 type LocalStorage struct {
 	dao rdbms.IDao
 }

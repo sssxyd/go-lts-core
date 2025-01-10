@@ -6,6 +6,7 @@ type ITable interface {
 	TableName() string
 	PrimaryInt64Key() string
 	DeleteInt64Key() string
+	AutoUpdateKeys() []string
 }
 
 type PageData struct {

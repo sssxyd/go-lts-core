@@ -29,6 +29,10 @@ func scan_table(tableSpecs *sync.Map, models ...ITable) {
 		tableName := model.TableName()
 		primaryInt64Key := model.PrimaryInt64Key()
 		deleteInt64Key := model.DeleteInt64Key()
+		autoUpdateDBTags := make(map[string]bool)
+		for _, dbTag := range model.AutoUpdateKeys() {
+			autoUpdateDBTags[dbTag] = true
+		}
 
 		dbTags := []string{}
 		fileNameDBTags := make(map[string]string)
@@ -51,6 +55,7 @@ func scan_table(tableSpecs *sync.Map, models ...ITable) {
 			primaryInt64Key:   primaryInt64Key,
 			deleteInt64Key:    deleteInt64Key,
 			dbTags:            dbTags,
+			autoUpdateDBTags:  autoUpdateDBTags,
 			fieldNameDBTags:   fileNameDBTags,
 			dbTagFieldNames:   dbTagFieldNames,
 			dbTagFieldIndexes: dbTagFieldIndexes,

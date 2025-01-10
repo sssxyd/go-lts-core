@@ -12,6 +12,7 @@ type TableSpec struct {
 	primaryInt64Key   string            // 主键字段
 	deleteInt64Key    string            // 逻辑删除字段
 	dbTags            []string          // db tags in order
+	autoUpdateDBTags  map[string]bool   // 自动更新字段
 	fieldNameDBTags   map[string]string // key: field name, value: db tag
 	dbTagFieldNames   map[string]string // key: db tag, value: field name
 	dbTagFieldIndexes map[string]int    // key: db tag, value: field index
@@ -196,7 +197,7 @@ func generateInsertQueryFromTableSpec(ts *TableSpec) string {
 func generateUpdateQueryFromTableSpec(ts *TableSpec) string {
 	columns := make([]string, 0, len(ts.dbTags))
 	for _, dbTag := range ts.dbTags {
-		if dbTag == ts.primaryInt64Key || dbTag == ts.deleteInt64Key {
+		if dbTag == ts.primaryInt64Key || dbTag == ts.deleteInt64Key || ts.autoUpdateDBTags[dbTag] {
 			continue
 		}
 		columns = append(columns, fmt.Sprintf("%s = ?", dbTag))
