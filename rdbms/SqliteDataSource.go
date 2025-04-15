@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sssxyd/go-lts-core/basic"
+	_ "modernc.org/sqlite"
 )
 
 type SqliteDataSource struct {
