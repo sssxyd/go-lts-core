@@ -90,7 +90,7 @@ func newSqliteDataSource(id string, db_path string, statements []string) (*Sqlit
 }
 
 func create_writer(db_path string) (*sqlx.DB, error) {
-	writer, err := sqlx.Connect("sqlite3", db_path)
+	writer, err := sqlx.Connect("sqlite", db_path)
 	if err != nil {
 		log.Printf("failed to connect to database: %v\n", err)
 		return nil, err
@@ -137,7 +137,7 @@ func create_reader(path string, max_memory_map_size uint64) (*sqlx.DB, error) {
 	}
 
 	// 连接数据库
-	db, err := sqlx.Connect("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=ro", path))
+	db, err := sqlx.Connect("sqlite", fmt.Sprintf("file:%s?cache=shared&mode=ro", path))
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}

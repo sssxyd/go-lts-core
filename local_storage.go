@@ -59,6 +59,7 @@ func initialize_sqlite_local_storage(storageFilePath string) *LocalStorage {
 	tables := []rdbms.ITable{&StorageModel{}}
 	ds, err := rdbms.NewDataSource(local_storage_datasource_id, fmt.Sprintf("sqlite:%s", storageFilePath), statements, tables)
 	if err != nil {
+		log.Printf("failed to create local storage data source: %v\n", err)
 		panic(err)
 	}
 	dao := ds.NewDao()

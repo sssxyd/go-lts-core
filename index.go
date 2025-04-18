@@ -6,10 +6,10 @@ import (
 )
 
 type ApiResult struct {
-	Code   int         `json:"code"`
-	Msg    string      `json:"msg"`
-	Result interface{} `json:"result"`
-	Micros int         `json:"micros"`
+	Code   int    `json:"code"`
+	Msg    string `json:"msg"`
+	Result any    `json:"result"`
+	Micros int    `json:"micros"`
 }
 
 type DBConfig struct {
